@@ -94,10 +94,34 @@
       errorEl.textContent = '';
     }
 
-    function buildUrl() {
-      const digitsOnly = (value) => value.replace(/\D/g, '');
+    const digitsOnly = (value) => value.replace(/\D/g, '');
+
+    function debounce(fn, delay) {
+      let timer;
+      return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    }
+
+    const normalizeCountryCode = debounce(() => {
+      const digits = digitsOnly(countryCodeInput.value);
+      countryCodeInput.value = digits ? `+${digits}` : '';
+    }, 500);
+
+    const normalizePhoneNumber = debounce(() => {
+      const kept = phoneNumberInput.value.replace(/[^\d\s]/g, '');
+      phoneNumberInput.value = kept.replace(/^0+\s*/, '');
+    }, 500);
+
+    function getFullNumber() {
       const countryCode = digitsOnly(countryCodeInput.value);
-      const phoneNumber = digitsOnly(phoneNumberInput.value);
+      const phoneNumber = digitsOnly(phoneNumberInput.value).replace(/^0+/, '');
+      return { countryCode, phoneNumber };
+    }
+
+    function buildUrl() {
+      const { countryCode, phoneNumber } = getFullNumber();
 
       if (!countryCode || !phoneNumber) {
         showError('Please enter a valid country code and phone number.');
@@ -109,9 +133,7 @@
     }
 
     function updateOpenLink() {
-      const digitsOnly = (value) => value.replace(/\D/g, '');
-      const countryCode = digitsOnly(countryCodeInput.value);
-      const phoneNumber = digitsOnly(phoneNumberInput.value);
+      const { countryCode, phoneNumber } = getFullNumber();
       const fullNumber = `${countryCode}${phoneNumber}`;
       openBtn.href = `https://wa.me/${fullNumber}`;
       openWebBtn.href = `https://web.whatsapp.com/send/?phone=${fullNumber}&text&type=phone_number&app_absent=0`;
@@ -132,8 +154,14 @@
     }
 
     prefillFromUrl();
-    countryCodeInput.addEventListener('input', updateOpenLink);
-    phoneNumberInput.addEventListener('input', updateOpenLink);
+    countryCodeInput.addEventListener('input', () => {
+      updateOpenLink();
+      normalizeCountryCode();
+    });
+    phoneNumberInput.addEventListener('input', () => {
+      updateOpenLink();
+      normalizePhoneNumber();
+    });
     updateOpenLink();
 
     copyBtn.addEventListener('click', async () => {
