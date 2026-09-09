@@ -109,9 +109,29 @@
       countryCodeInput.value = digits ? `+${digits}` : '';
     }, 500);
 
+    // removes a leading run of digits/spaces matching the country code, e.g. "90 555..." -> "555..."
+    function stripLeadingCountryCode(value, countryCode) {
+      if (!countryCode) return value;
+
+      let digitsSeen = 0;
+      let i = 0;
+      while (i < value.length && digitsSeen < countryCode.length) {
+        if (/\d/.test(value[i])) digitsSeen++;
+        i++;
+      }
+
+      if (digitsSeen < countryCode.length || digitsOnly(value.slice(0, i)) !== countryCode) {
+        return value;
+      }
+
+      return value.slice(i).replace(/^\s+/, '');
+    }
+
     const normalizePhoneNumber = debounce(() => {
-      const kept = phoneNumberInput.value.replace(/[^\d\s]/g, '');
-      phoneNumberInput.value = kept.replace(/^0+\s*/, '');
+      let value = phoneNumberInput.value.replace(/[^\d\s]/g, '');
+      value = value.replace(/^0+\s*/, '');
+      value = stripLeadingCountryCode(value, digitsOnly(countryCodeInput.value));
+      phoneNumberInput.value = value.replace(/^0+\s*/, '');
     }, 500);
 
     function getFullNumber() {
