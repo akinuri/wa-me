@@ -117,6 +117,21 @@
       openWebBtn.href = `https://web.whatsapp.com/send/?phone=${fullNumber}&text&type=phone_number&app_absent=0`;
     }
 
+    function prefillFromUrl() {
+      const search = window.location.search;
+      if (!search) return;
+
+      // supports ?phone=<number> as well as a bare ?<number> with no key
+      const phoneParam = new URLSearchParams(search).get('phone');
+      const raw = phoneParam ?? decodeURIComponent(search.slice(1));
+      if (raw) {
+        phoneNumberInput.value = raw;
+      }
+
+      history.replaceState(null, '', window.location.pathname);
+    }
+
+    prefillFromUrl();
     countryCodeInput.addEventListener('input', updateOpenLink);
     phoneNumberInput.addEventListener('input', updateOpenLink);
     updateOpenLink();
